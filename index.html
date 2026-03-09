@@ -1,1 +1,94 @@
-<head></head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vs explain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #fafafa;
+            color: #222;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
+        }
+
+        h1 span {
+            font-style: italic;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 300;
+            letter-spacing: 0.03em;
+        }
+
+        .comparisons {
+            list-style: none;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .comparisons li {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .comparisons li:first-child {
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .comparisons a {
+            display: block;
+            padding: 20px 4px;
+            text-decoration: none;
+            color: #222;
+            font-size: 1.15rem;
+            transition: color 0.15s;
+        }
+
+        .comparisons a:hover {
+            color: #555;
+        }
+
+        .comparisons .vs {
+            color: #999;
+            font-style: italic;
+            margin: 0 6px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span>vs</span> explain</h1>
+        <p class="subtitle">Interactive Comparison Explanations</p>
+    </header>
+
+    <ul class="comparisons">
+        <li><a href="quantitative-vs-qualitative/">quantitative <span class="vs">vs</span> qualitative</a></li>
+        <li><a href="objective-vs-subjective/">objective <span class="vs">vs</span> subjective</a></li>
+        <li><a href="combination-vs-permutation/">combination <span class="vs">vs</span> permutation</a></li>
+    </ul>
+</body>
+</html>
