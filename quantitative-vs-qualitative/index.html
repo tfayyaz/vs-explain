@@ -362,7 +362,7 @@ function renderPeople(count) {
         const x = spacing * (i + 1) - 12;
         const col = personColors[i % personColors.length];
         p.style.left = x + 'px';
-        p.style.bottom = (20 + Math.random() * 60) + 'px';
+        p.style.bottom = (60 + Math.random() * 80) + 'px';
         p.innerHTML = `<div class="person-head"></div><div class="person-body" style="background:${col}"></div>`;
         street.appendChild(p);
     }
