@@ -11,26 +11,27 @@
             background: #fafafa;
             color: #222;
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 20px 20px;
         }
         .content { max-width: 720px; margin: 0 auto; }
         .back { font-size: 0.9rem; color: #999; text-decoration: none; -webkit-tap-highlight-color: transparent; }
         .back:hover { color: #555; }
-        h1 { font-size: 2.2rem; font-weight: 400; margin: 40px 0 10px; text-align: center; }
+        h1 { font-size: 2rem; font-weight: 400; margin: 12px 0 4px; text-align: center; }
         h1 .vs { font-style: italic; color: #999; margin: 0 6px; }
-        .intro { text-align: center; color: #666; margin-bottom: 40px; line-height: 1.6; }
+        .intro { text-align: center; color: #666; margin-bottom: 16px; line-height: 1.5; font-size: 0.95rem; }
 
         .scenario {
             background: #fff;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            padding: 32px;
-            margin-bottom: 24px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
         }
         .scenario p {
-            line-height: 1.6;
-            margin-bottom: 16px;
+            line-height: 1.5;
+            margin-bottom: 10px;
             color: #555;
+            font-size: 0.9rem;
         }
 
         /* The scene */
@@ -38,12 +39,12 @@
             position: relative;
             background: linear-gradient(180deg, #d4e4f7 0%, #e8e0d4 40%, #c8bfb0 100%);
             border-radius: 8px;
-            height: 220px;
+            height: 160px;
             overflow: hidden;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
             touch-action: none;
-            margin-bottom: 24px;
+            margin-bottom: 12px;
         }
         .street-label {
             position: absolute;
@@ -80,23 +81,23 @@
         .dual-view {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 24px 0;
+            gap: 16px;
+            margin: 12px 0;
         }
         .view-panel {
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            padding: 20px;
-            min-height: 180px;
+            padding: 14px;
+            min-height: 140px;
             transition: border-color 0.3s, box-shadow 0.3s;
         }
         .view-panel.quant { border-color: #4A90D9; }
         .view-panel.qual { border-color: #D97B4A; }
         .view-panel h3 {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             font-weight: 600;
         }
         .view-panel.quant h3 { color: #4A90D9; }
@@ -106,38 +107,38 @@
         .stat-row {
             display: flex;
             justify-content: space-between;
-            padding: 6px 0;
+            padding: 4px 0;
             border-bottom: 1px solid #f0f0f0;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         .stat-row .label { color: #888; }
         .stat-row .value { font-weight: 600; color: #4A90D9; }
 
         /* Qual panel internals */
         .mood-text {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-style: italic;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             color: #333;
-            min-height: 36px;
+            min-height: 28px;
         }
         .observation {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #888;
-            line-height: 1.6;
-            min-height: 60px;
+            line-height: 1.5;
+            min-height: 48px;
         }
 
         /* Time slider */
         .time-control {
-            margin: 24px 0 8px;
+            margin: 8px 0 4px;
             text-align: center;
         }
         .time-control label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #888;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         .time-slider {
             width: 100%;
@@ -168,21 +169,21 @@
             cursor: pointer;
         }
         .time-display {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             color: #555;
-            margin-top: 8px;
+            margin-top: 4px;
         }
 
         /* Takeaway */
         .takeaway {
             background: #f8f6f3;
             border-radius: 8px;
-            padding: 20px;
+            padding: 14px;
             text-align: center;
-            font-size: 1rem;
-            line-height: 1.6;
+            font-size: 0.9rem;
+            line-height: 1.5;
             color: #555;
-            margin-top: 16px;
+            margin-top: 10px;
         }
         .takeaway strong { color: #222; }
 
