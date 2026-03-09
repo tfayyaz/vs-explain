@@ -6,21 +6,515 @@
     <title>combination vs permutation — vs explain</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Georgia, 'Times New Roman', serif; background: #fafafa; color: #222; min-height: 100vh; padding: 40px 20px; }
-        .back { font-size: 0.9rem; color: #999; text-decoration: none; }
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #fafafa;
+            color: #222;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .content { max-width: 720px; margin: 0 auto; }
+        .back { font-size: 0.9rem; color: #999; text-decoration: none; -webkit-tap-highlight-color: transparent; }
         .back:hover { color: #555; }
         h1 { font-size: 2.2rem; font-weight: 400; margin: 40px 0 10px; text-align: center; }
         h1 .vs { font-style: italic; color: #999; margin: 0 6px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 40px; }
-        .content { max-width: 640px; margin: 0 auto; }
-        p { margin-bottom: 1em; line-height: 1.6; }
+        .intro { text-align: center; color: #666; margin-bottom: 40px; line-height: 1.6; }
+
+        .scenario {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .scenario p {
+            line-height: 1.6;
+            margin-bottom: 16px;
+            color: #555;
+        }
+
+        /* Ball pool */
+        .ball-pool {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 24px 0;
+        }
+        .ball {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            position: relative;
+        }
+        .ball.selected {
+            border-color: #222;
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .ball .order-badge {
+            position: absolute;
+            top: -8px; right: -8px;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: #222;
+            color: #fff;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @media (hover: hover) {
+            .ball:not(.selected):hover { transform: scale(1.08); }
+        }
+
+        /* Arrangement area */
+        .arrangement-area {
+            margin: 24px 0;
+        }
+        .arrangement-label {
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        /* Slots where balls go */
+        .slots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 16px 0;
+        }
+        .slot {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            border: 3px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #ccc;
+            position: relative;
+        }
+        .slot.filled {
+            border-style: solid;
+        }
+        .slot .slot-num {
+            position: absolute;
+            bottom: -20px;
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+
+        /* Results side by side */
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+        .result-panel {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .result-panel.combo { border-color: #6A5ACD; }
+        .result-panel.perm { border-color: #CD5A6A; }
+        .result-panel h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .result-panel.combo h3 { color: #6A5ACD; }
+        .result-panel.perm h3 { color: #CD5A6A; }
+        .result-panel .subtitle-text {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-bottom: 12px;
+        }
+        .result-count {
+            font-size: 2.4rem;
+            font-weight: 400;
+            margin-bottom: 4px;
+        }
+        .result-panel.combo .result-count { color: #6A5ACD; }
+        .result-panel.perm .result-count { color: #CD5A6A; }
+        .result-formula {
+            font-size: 0.8rem;
+            color: #bbb;
+            font-style: italic;
+            margin-bottom: 16px;
+        }
+
+        /* Generated arrangements */
+        .arrangements-list {
+            max-height: 220px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .arr-item {
+            display: inline-flex;
+            gap: 3px;
+            padding: 4px 8px;
+            margin: 3px;
+            border-radius: 6px;
+            background: #f8f8f8;
+            align-items: center;
+        }
+        .arr-dot {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Highlight matching */
+        .arr-item.highlighted {
+            outline: 2px solid #222;
+            background: #f0edf7;
+        }
+
+        /* Explanation text */
+        .insight-text {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #555;
+            margin: 16px 0;
+        }
+        .insight-text strong { color: #222; }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 16px 0;
+        }
+        button {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 0.95rem;
+            padding: 12px 24px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #fff;
+            color: #444;
+            cursor: pointer;
+            transition: all 0.15s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        @media (hover: hover) { button:hover { background: #f0f0f0; } }
+
+        .takeaway {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #555;
+        }
+        .takeaway strong { color: #222; }
+
+        .memory-trick {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #555;
+            margin: 24px 0;
+        }
+        .memory-trick strong { color: #222; }
+
+        .summary-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .summary-section h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #444;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .summary-table th, .summary-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .summary-table th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+        }
+        .summary-table td:nth-child(2) { color: #6A5ACD; }
+        .summary-table td:nth-child(3) { color: #CD5A6A; }
+
+        @media (max-width: 600px) {
+            body { padding: 24px 16px; }
+            .scenario { padding: 20px 16px; }
+            h1 { font-size: 1.6rem; }
+            .results { grid-template-columns: 1fr; }
+            .ball { width: 48px; height: 48px; font-size: 0.95rem; }
+            .slot { width: 48px; height: 48px; }
+        }
     </style>
 </head>
 <body>
     <div class="content">
         <a href="../" class="back">&larr; vs explain</a>
         <h1>combination <span class="vs">vs</span> permutation</h1>
-        <p class="subtitle">Interactive explanation coming soon.</p>
+        <p class="intro">Tap balls to select them and see every way they can be grouped.<br>One side cares about order. The other doesn't. Watch what happens.</p>
+
+        <div class="scenario">
+            <p>Pick 2 or more coloured balls. The left panel shows every <strong>combination</strong> (unique groups, order ignored). The right shows every <strong>permutation</strong> (order matters). Hover or tap any arrangement to see its counterparts highlighted on the other side.</p>
+
+            <div class="ball-pool" id="ballPool"></div>
+
+            <div class="arrangement-label" id="selectionLabel">Tap balls to select them</div>
+
+            <div class="results">
+                <div class="result-panel combo">
+                    <h3>Combinations</h3>
+                    <div class="subtitle-text">order doesn't matter</div>
+                    <div class="result-count" id="comboCount">—</div>
+                    <div class="result-formula" id="comboFormula"></div>
+                    <div class="arrangements-list" id="comboList"></div>
+                </div>
+                <div class="result-panel perm">
+                    <h3>Permutations</h3>
+                    <div class="subtitle-text">order matters</div>
+                    <div class="result-count" id="permCount">—</div>
+                    <div class="result-formula" id="permFormula"></div>
+                    <div class="arrangements-list" id="permList"></div>
+                </div>
+            </div>
+
+            <div class="insight-text" id="insightText" style="display:none"></div>
+
+            <div class="controls">
+                <button onclick="clearSelection()">Clear</button>
+            </div>
+
+            <div class="takeaway">
+                <strong>Combination</strong>: "Which items?" — {A,B} is the same as {B,A}.<br>
+                <strong>Permutation</strong>: "Which items, in what order?" — AB is different from BA.<br>
+                A lock code is a permutation. A pizza topping choice is a combination.
+            </div>
+        </div>
+
+        <div class="memory-trick">
+            A "<strong style="color:#6A5ACD">combination</strong> lock" is actually misnamed — it should be a "<strong style="color:#CD5A6A">permutation</strong> lock", because 7-2-5 is different from 5-2-7.<br><br>
+            If the order matters, it's a <strong style="color:#CD5A6A">permutation</strong>. If you just care about <em>which</em> items, it's a <strong style="color:#6A5ACD">combination</strong>.
+        </div>
+
+        <div class="summary-section">
+            <h2>Summary</h2>
+            <table class="summary-table">
+                <tr><th></th><th>Combination</th><th>Permutation</th></tr>
+                <tr><td>Order</td><td>Doesn't matter</td><td>Matters</td></tr>
+                <tr><td>Question</td><td>Which items?</td><td>Which items, in what order?</td></tr>
+                <tr><td>Count</td><td>Fewer possibilities</td><td>More possibilities</td></tr>
+                <tr><td>Formula</td><td>n! / (r! (n-r)!)</td><td>n! / (n-r)!</td></tr>
+                <tr><td>Example</td><td>Pizza toppings</td><td>Lock code</td></tr>
+            </table>
+        </div>
     </div>
+
+<script>
+const balls = [
+    { letter: 'A', color: '#e74c3c' },
+    { letter: 'B', color: '#3498db' },
+    { letter: 'C', color: '#2ecc71' },
+    { letter: 'D', color: '#f39c12' },
+    { letter: 'E', color: '#9b59b6' },
+];
+
+let selected = [];
+const groupSize = 2; // always pick pairs for clarity, but we show all combos/perms of selected
+
+function render() {
+    // Balls
+    const pool = document.getElementById('ballPool');
+    pool.innerHTML = '';
+    balls.forEach((b, i) => {
+        const el = document.createElement('div');
+        el.className = 'ball' + (selected.includes(i) ? ' selected' : '');
+        el.style.background = b.color;
+        const orderIdx = selected.indexOf(i);
+        el.innerHTML = b.letter + (selected.includes(i) ? `<span class="order-badge">${orderIdx + 1}</span>` : '');
+        el.onclick = () => toggleBall(i);
+        pool.appendChild(el);
+    });
+
+    const label = document.getElementById('selectionLabel');
+    const comboCount = document.getElementById('comboCount');
+    const permCount = document.getElementById('permCount');
+    const comboList = document.getElementById('comboList');
+    const permList = document.getElementById('permList');
+    const comboFormula = document.getElementById('comboFormula');
+    const permFormula = document.getElementById('permFormula');
+    const insight = document.getElementById('insightText');
+
+    if (selected.length < 2) {
+        label.textContent = selected.length === 0 ? 'Tap balls to select them' : 'Select at least 2 balls';
+        comboCount.textContent = '—';
+        permCount.textContent = '—';
+        comboList.innerHTML = '';
+        permList.innerHTML = '';
+        comboFormula.textContent = '';
+        permFormula.textContent = '';
+        insight.style.display = 'none';
+        return;
+    }
+
+    const r = 2;
+    const items = selected.map(i => balls[i]);
+    const n = items.length;
+
+    label.textContent = n + ' balls selected — showing all pairs (groups of 2)';
+
+    // Generate combinations
+    const combos = [];
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            combos.push([items[i], items[j]]);
+        }
+    }
+
+    // Generate permutations
+    const perms = [];
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            if (i !== j) perms.push([items[i], items[j]]);
+        }
+    }
+
+    comboCount.textContent = combos.length;
+    permCount.textContent = perms.length;
+
+    const fact = (x) => x <= 1 ? 1 : x * fact(x - 1);
+    comboFormula.textContent = `C(${n},${r}) = ${n}! / (${r}! × ${n - r}!) = ${combos.length}`;
+    permFormula.textContent = `P(${n},${r}) = ${n}! / ${n - r}! = ${perms.length}`;
+
+    // Render combo list
+    comboList.innerHTML = '';
+    combos.forEach((c, ci) => {
+        const el = document.createElement('div');
+        el.className = 'arr-item';
+        el.dataset.comboIdx = ci;
+        el.innerHTML = c.map(b => `<span class="arr-dot" style="background:${b.color}"></span>`).join('') + `<span style="font-size:0.75rem; color:#888; margin-left:4px;">${c.map(b => b.letter).join('')}</span>`;
+
+        // On hover/touch, highlight matching perms
+        const comboKey = c.map(b => b.letter).sort().join('');
+        el.addEventListener('mouseenter', () => highlightPerms(comboKey));
+        el.addEventListener('mouseleave', clearHighlights);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); highlightPerms(comboKey); });
+        el.addEventListener('touchend', clearHighlights);
+
+        comboList.appendChild(el);
+    });
+
+    // Render perm list
+    permList.innerHTML = '';
+    perms.forEach((p, pi) => {
+        const el = document.createElement('div');
+        el.className = 'arr-item';
+        el.dataset.permIdx = pi;
+        const permKey = p.map(b => b.letter).sort().join('');
+        el.dataset.comboKey = permKey;
+        el.innerHTML = p.map(b => `<span class="arr-dot" style="background:${b.color}"></span>`).join('') + `<span style="font-size:0.75rem; color:#888; margin-left:4px;">${p.map(b => b.letter).join('')}</span>`;
+
+        // On hover/touch, highlight matching combo
+        el.addEventListener('mouseenter', () => highlightCombo(permKey, pi));
+        el.addEventListener('mouseleave', clearHighlights);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); highlightCombo(permKey, pi); });
+        el.addEventListener('touchend', clearHighlights);
+
+        permList.appendChild(el);
+    });
+
+    // Insight
+    insight.style.display = 'block';
+    const ratio = perms.length / combos.length;
+    insight.innerHTML = `Each combination appears <strong>${ratio} times</strong> in the permutation list — because ${r} items can be arranged in <strong>${r}! = ${fact(r)}</strong> different orders.<br>
+        <span style="font-size:0.9rem; color:#888;">That's why there are always ${ratio}× more permutations than combinations.</span>`;
+}
+
+function highlightPerms(comboKey) {
+    clearHighlights();
+    document.querySelectorAll('.arr-item[data-combo-key="' + comboKey + '"]').forEach(el => el.classList.add('highlighted'));
+    // Also highlight the combo
+    document.querySelectorAll('#comboList .arr-item').forEach(el => {
+        const text = el.textContent.replace(/\s/g, '');
+        const letters = text.match(/[A-E]+/);
+        if (letters && letters[0].split('').sort().join('') === comboKey) {
+            el.classList.add('highlighted');
+        }
+    });
+}
+
+function highlightCombo(comboKey, permIdx) {
+    clearHighlights();
+    // Highlight all perms with same combo key
+    document.querySelectorAll('.arr-item[data-combo-key="' + comboKey + '"]').forEach(el => el.classList.add('highlighted'));
+    // Highlight matching combo
+    document.querySelectorAll('#comboList .arr-item').forEach(el => {
+        const text = el.textContent.replace(/\s/g, '');
+        const letters = text.match(/[A-E]+/);
+        if (letters && letters[0].split('').sort().join('') === comboKey) {
+            el.classList.add('highlighted');
+        }
+    });
+}
+
+function clearHighlights() {
+    document.querySelectorAll('.arr-item.highlighted').forEach(el => el.classList.remove('highlighted'));
+}
+
+function toggleBall(i) {
+    if (selected.includes(i)) {
+        selected = selected.filter(x => x !== i);
+    } else {
+        selected.push(i);
+    }
+    render();
+}
+
+function clearSelection() {
+    selected = [];
+    render();
+}
+
+render();
+</script>
 </body>
 </html>

@@ -6,21 +6,450 @@
     <title>objective vs subjective — vs explain</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Georgia, 'Times New Roman', serif; background: #fafafa; color: #222; min-height: 100vh; padding: 40px 20px; }
-        .back { font-size: 0.9rem; color: #999; text-decoration: none; }
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #fafafa;
+            color: #222;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .content { max-width: 720px; margin: 0 auto; }
+        .back { font-size: 0.9rem; color: #999; text-decoration: none; -webkit-tap-highlight-color: transparent; }
         .back:hover { color: #555; }
         h1 { font-size: 2.2rem; font-weight: 400; margin: 40px 0 10px; text-align: center; }
         h1 .vs { font-style: italic; color: #999; margin: 0 6px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 40px; }
-        .content { max-width: 640px; margin: 0 auto; }
-        p { margin-bottom: 1em; line-height: 1.6; }
+        .intro { text-align: center; color: #666; margin-bottom: 40px; line-height: 1.6; }
+
+        .scenario {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .scenario p {
+            line-height: 1.6;
+            margin-bottom: 16px;
+            color: #555;
+        }
+
+        /* The sentence builder */
+        .sentence-area {
+            margin: 24px 0;
+        }
+        .sentence-display {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 28px;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .sentence-text {
+            font-size: 1.4rem;
+            line-height: 1.5;
+            color: #333;
+        }
+        .sentence-text .editable-word {
+            display: inline-block;
+            border-bottom: 3px solid #222;
+            padding: 2px 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            position: relative;
+        }
+        .sentence-text .editable-word.objective-word { border-color: #5B8C5A; color: #5B8C5A; }
+        .sentence-text .editable-word.subjective-word { border-color: #8C5B5B; color: #8C5B5B; }
+
+        /* Word picker dropdown */
+        .word-picker {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            padding: 8px;
+            z-index: 10;
+            min-width: 180px;
+            display: none;
+        }
+        .word-picker.show { display: block; }
+        .word-option {
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.15s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            white-space: nowrap;
+        }
+        @media (hover: hover) {
+            .word-option:hover { background: #f0f0f0; }
+        }
+        .word-option:active { background: #e8e8e8; }
+
+        /* Analysis panel */
+        .analysis {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+        .analysis-col {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .analysis-col.obj { border-color: #5B8C5A; }
+        .analysis-col.subj { border-color: #8C5B5B; }
+        .analysis-col h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .analysis-col.obj h3 { color: #5B8C5A; }
+        .analysis-col.subj h3 { color: #8C5B5B; }
+        .analysis-col .explanation {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Word highlights in the breakdown */
+        .word-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin: 2px;
+        }
+        .word-tag.obj-tag { background: rgba(91,140,90,0.12); color: #5B8C5A; }
+        .word-tag.subj-tag { background: rgba(140,91,91,0.12); color: #8C5B5B; }
+
+        .breakdown {
+            margin: 16px 0;
+        }
+        .breakdown-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+        .breakdown-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        /* Spectrum bar */
+        .spectrum-bar {
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(to right, #5B8C5A, #e0e0e0, #8C5B5B);
+            margin: 20px 0 4px;
+            position: relative;
+        }
+        .spectrum-marker {
+            position: absolute;
+            top: -6px;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #222;
+            transform: translateX(-50%);
+            transition: left 0.4s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .spectrum-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .takeaway {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #555;
+            margin-top: 16px;
+        }
+        .takeaway strong { color: #222; }
+
+        .memory-trick {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #555;
+            margin: 24px 0;
+        }
+        .memory-trick strong { color: #222; }
+
+        .summary-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .summary-section h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #444;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .summary-table th, .summary-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .summary-table th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+        }
+        .summary-table td:nth-child(2) { color: #5B8C5A; }
+        .summary-table td:nth-child(3) { color: #8C5B5B; }
+
+        @media (max-width: 600px) {
+            body { padding: 24px 16px; }
+            .scenario { padding: 20px 16px; }
+            h1 { font-size: 1.6rem; }
+            .analysis { grid-template-columns: 1fr; }
+            .sentence-text { font-size: 1.15rem; }
+        }
     </style>
 </head>
 <body>
     <div class="content">
         <a href="../" class="back">&larr; vs explain</a>
         <h1>objective <span class="vs">vs</span> subjective</h1>
-        <p class="subtitle">Interactive explanation coming soon.</p>
+        <p class="intro">Tap the underlined words to swap them.<br>Watch the same sentence shift between fact and opinion.</p>
+
+        <div class="scenario">
+            <p>Each sentence below has swappable words. One version is objective (verifiable), the other is subjective (a matter of perspective). Tap the underlined words to toggle between them and see how a single word changes the nature of the whole statement.</p>
+
+            <div id="sentences"></div>
+
+            <div class="takeaway">
+                <strong>Objective</strong> = could be checked, measured, or proven.<br>
+                <strong>Subjective</strong> = depends on who's saying it.<br>
+                Often the difference is just one or two words.
+            </div>
+        </div>
+
+        <div class="memory-trick">
+            <strong style="color:#5B8C5A">Objective</strong> — think "object." It exists outside of you. Anyone can verify it.<br>
+            <strong style="color:#8C5B5B">Subjective</strong> — think "subject" (as in, the person). It comes from <em>you</em>.<br><br>
+            If two strangers would agree on it without discussion, it's objective.
+        </div>
+
+        <div class="summary-section">
+            <h2>Summary</h2>
+            <table class="summary-table">
+                <tr><th></th><th>Objective</th><th>Subjective</th></tr>
+                <tr><td>Means</td><td>Independent of opinion</td><td>Depends on perspective</td></tr>
+                <tr><td>Can be</td><td>Verified or proven false</td><td>Agreed or disagreed with</td></tr>
+                <tr><td>Language clues</td><td>Numbers, dates, measurements</td><td>"Best", "should", "beautiful"</td></tr>
+                <tr><td>Example</td><td>"Water boils at 100 °C"</td><td>"Hot coffee tastes better"</td></tr>
+            </table>
+        </div>
     </div>
+
+<script>
+const sentenceData = [
+    {
+        template: 'The coffee is {word}.',
+        slots: [{
+            options: [
+                { text: '72 °C', type: 'obj' },
+                { text: 'too hot', type: 'subj' },
+                { text: 'scalding', type: 'subj' },
+            ],
+            current: 0,
+        }],
+        whyObj: 'Temperature can be measured with a thermometer. Anyone measuring it gets the same number.',
+        whySubj: '"Too hot" and "scalding" depend on personal tolerance. Someone else might find it perfect.',
+    },
+    {
+        template: 'The painting sold for {word}.',
+        slots: [{
+            options: [
+                { text: '$42 million', type: 'obj' },
+                { text: 'an absurd amount', type: 'subj' },
+                { text: 'what it deserved', type: 'subj' },
+            ],
+            current: 0,
+        }],
+        whyObj: 'The sale price is a recorded fact. It appears on receipts, auction records, public filings.',
+        whySubj: 'Whether the amount is "absurd" or "deserved" is an opinion about value — not the value itself.',
+    },
+    {
+        template: 'She ran the marathon in {word}.',
+        slots: [{
+            options: [
+                { text: '3 hours 12 minutes', type: 'obj' },
+                { text: 'an impressive time', type: 'subj' },
+                { text: 'a disappointing result', type: 'subj' },
+            ],
+            current: 0,
+        }],
+        whyObj: 'The finish time was recorded by the clock. It\'s the same regardless of who reads it.',
+        whySubj: '"Impressive" or "disappointing" depends on expectations. For a first-timer, 3:12 is remarkable. For an elite runner, it might not be.',
+    },
+    {
+        template: 'The restaurant has {word}.',
+        slots: [{
+            options: [
+                { text: '47 seats', type: 'obj' },
+                { text: 'a cozy atmosphere', type: 'subj' },
+                { text: 'not enough space', type: 'subj' },
+            ],
+            current: 0,
+        }],
+        whyObj: 'You can count the seats. The number is the same for everyone.',
+        whySubj: '"Cozy" and "not enough space" are personal interpretations of the same physical reality.',
+    },
+    {
+        template: 'The film is {word}.',
+        slots: [{
+            options: [
+                { text: '2 hours 23 minutes long', type: 'obj' },
+                { text: 'too long', type: 'subj' },
+                { text: 'beautifully paced', type: 'subj' },
+            ],
+            current: 0,
+        }],
+        whyObj: 'The runtime is printed on the ticket. It doesn\'t change based on how you felt watching it.',
+        whySubj: '"Too long" and "beautifully paced" are reactions to the same duration. Two people in the same screening can disagree.',
+    },
+];
+
+let openPicker = null;
+
+function render() {
+    const container = document.getElementById('sentences');
+    container.innerHTML = '';
+
+    sentenceData.forEach((s, si) => {
+        const div = document.createElement('div');
+        div.className = 'sentence-area';
+
+        // Build sentence
+        const parts = s.template.split(/\{word\}/);
+        let sentenceHTML = '';
+        let slotIdx = 0;
+        for (let i = 0; i < parts.length; i++) {
+            sentenceHTML += parts[i];
+            if (slotIdx < s.slots.length && i < parts.length - 1) {
+                const slot = s.slots[slotIdx];
+                const opt = slot.options[slot.current];
+                const typeClass = opt.type === 'obj' ? 'objective-word' : 'subjective-word';
+                sentenceHTML += `<span class="editable-word ${typeClass}" data-sentence="${si}" data-slot="${slotIdx}">${opt.text}<div class="word-picker" id="picker-${si}-${slotIdx}">`;
+                slot.options.forEach((o, oi) => {
+                    const activeStyle = oi === slot.current ? 'font-weight:600;' : '';
+                    sentenceHTML += `<div class="word-option" data-sentence="${si}" data-slot="${slotIdx}" data-opt="${oi}" style="${activeStyle}">${o.text}</div>`;
+                });
+                sentenceHTML += `</div></span>`;
+                slotIdx++;
+            }
+        }
+
+        // Current state
+        const currentType = s.slots[0].options[s.slots[0].current].type;
+        const isObj = currentType === 'obj';
+        const spectrumPos = isObj ? 10 : 85;
+
+        div.innerHTML = `
+            <div class="sentence-display">
+                <div class="sentence-text">${sentenceHTML}</div>
+            </div>
+
+            <div class="spectrum-bar">
+                <div class="spectrum-marker" style="left:${spectrumPos}%"></div>
+            </div>
+            <div class="spectrum-labels"><span>Objective</span><span>Subjective</span></div>
+
+            <div class="analysis">
+                <div class="analysis-col obj" style="opacity:${isObj ? 1 : 0.4}">
+                    <h3>Objective</h3>
+                    <div class="explanation">${isObj ? s.whyObj : 'Swap to an objective word to see why.'}</div>
+                </div>
+                <div class="analysis-col subj" style="opacity:${isObj ? 0.4 : 1}">
+                    <h3>Subjective</h3>
+                    <div class="explanation">${!isObj ? s.whySubj : 'Swap to a subjective word to see why.'}</div>
+                </div>
+            </div>
+            <div style="height:16px"></div>
+        `;
+        container.appendChild(div);
+    });
+
+    // Attach click handlers
+    document.querySelectorAll('.editable-word').forEach(el => {
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const si = this.dataset.sentence;
+            const sli = this.dataset.slot;
+            const picker = document.getElementById('picker-' + si + '-' + sli);
+
+            // Close any other open picker
+            document.querySelectorAll('.word-picker.show').forEach(p => p.classList.remove('show'));
+
+            if (openPicker === picker) {
+                openPicker = null;
+            } else {
+                picker.classList.add('show');
+                openPicker = picker;
+            }
+        });
+    });
+
+    document.querySelectorAll('.word-option').forEach(el => {
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const si = parseInt(this.dataset.sentence);
+            const sli = parseInt(this.dataset.slot);
+            const oi = parseInt(this.dataset.opt);
+            sentenceData[si].slots[sli].current = oi;
+            openPicker = null;
+            render();
+        });
+    });
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.word-picker.show').forEach(p => p.classList.remove('show'));
+    openPicker = null;
+});
+
+render();
+</script>
 </body>
 </html>

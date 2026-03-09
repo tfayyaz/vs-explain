@@ -66,10 +66,17 @@
             color: #222;
             font-size: 1.15rem;
             transition: color 0.15s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .comparisons a:hover {
-            color: #555;
+        @media (hover: hover) {
+            .comparisons a:hover { color: #555; }
+        }
+        .comparisons a:active { color: #555; }
+
+        @media (max-width: 600px) {
+            body { padding: 48px 20px; }
+            h1 { font-size: 2.4rem; }
         }
 
         .comparisons .vs {
@@ -89,6 +96,7 @@
         <li><a href="quantitative-vs-qualitative/">quantitative <span class="vs">vs</span> qualitative</a></li>
         <li><a href="objective-vs-subjective/">objective <span class="vs">vs</span> subjective</a></li>
         <li><a href="combination-vs-permutation/">combination <span class="vs">vs</span> permutation</a></li>
+        <li><a href="trace-vs-span/">trace <span class="vs">vs</span> span</a></li>
     </ul>
 </body>
 </html>

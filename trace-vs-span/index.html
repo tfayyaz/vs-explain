@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>trace vs span — vs explain</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #fafafa;
+            color: #222;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .content { max-width: 760px; margin: 0 auto; }
+        .back { font-size: 0.9rem; color: #999; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+        .back:hover { color: #555; }
+        h1 { font-size: 2.2rem; font-weight: 400; margin: 40px 0 10px; text-align: center; }
+        h1 .vs { font-style: italic; color: #999; margin: 0 6px; }
+        .intro { text-align: center; color: #666; margin-bottom: 40px; line-height: 1.6; }
+
+        .scenario {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .scenario p {
+            line-height: 1.6;
+            margin-bottom: 16px;
+            color: #555;
+        }
+
+        /* Service nodes */
+        .system-diagram {
+            position: relative;
+            min-height: 340px;
+            margin: 24px 0;
+            overflow: hidden;
+        }
+        .service-node {
+            position: absolute;
+            width: 120px;
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            z-index: 2;
+        }
+        .service-node .svc-icon { font-size: 1.4rem; margin-bottom: 4px; }
+        .service-node .svc-name { font-size: 0.75rem; font-weight: 600; color: #555; }
+        .service-node .svc-time { font-size: 0.65rem; color: #aaa; margin-top: 2px; }
+        .service-node.active { border-color: #e67e22; box-shadow: 0 0 0 3px rgba(230,126,34,0.2); }
+        .service-node.in-trace { border-color: #3498db; }
+        @media (hover: hover) {
+            .service-node:hover { transform: scale(1.05); }
+        }
+
+        /* Connection lines - drawn via canvas */
+        .diagram-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        /* Waterfall / timeline */
+        .waterfall {
+            margin: 24px 0;
+            position: relative;
+        }
+        .waterfall-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #aaa;
+            margin-bottom: 4px;
+            padding: 0 4px;
+        }
+        .waterfall-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            transition: opacity 0.2s;
+        }
+        .waterfall-label {
+            width: 100px;
+            font-size: 0.75rem;
+            color: #666;
+            flex-shrink: 0;
+            text-align: right;
+            padding-right: 10px;
+        }
+        .waterfall-track {
+            flex: 1;
+            height: 28px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            position: relative;
+        }
+        .waterfall-bar {
+            position: absolute;
+            height: 100%;
+            border-radius: 4px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: #fff;
+            font-weight: 600;
+        }
+        .waterfall-row.active .waterfall-bar { box-shadow: 0 0 0 3px rgba(0,0,0,0.15); }
+        .waterfall-row.dimmed { opacity: 0.3; }
+
+        /* Info panel */
+        .info-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+        .info-col {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .info-col.trace-col { border-color: #3498db; }
+        .info-col.span-col { border-color: #e67e22; }
+        .info-col h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-col.trace-col h3 { color: #3498db; }
+        .info-col.span-col h3 { color: #e67e22; }
+        .info-col .info-value {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .info-col .info-detail {
+            font-size: 0.85rem;
+            color: #888;
+            line-height: 1.5;
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #aaa;
+            margin: 12px 0;
+        }
+
+        /* Trigger button */
+        .trigger-btn {
+            display: block;
+            margin: 0 auto;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1rem;
+            padding: 14px 32px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            background: #fff;
+            color: #3498db;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        @media (hover: hover) {
+            .trigger-btn:hover { background: #3498db; color: #fff; }
+        }
+        .trigger-btn:active { background: #3498db; color: #fff; }
+        .trigger-btn:disabled { opacity: 0.4; cursor: default; }
+
+        /* Memory trick */
+        .memory-trick {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #555;
+            margin: 24px 0;
+        }
+        .memory-trick strong { color: #222; }
+
+        /* Summary */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+        .summary-table th, .summary-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .summary-table th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+        }
+        .summary-table td:nth-child(2) { color: #3498db; }
+        .summary-table td:nth-child(3) { color: #e67e22; }
+
+        .scenario h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #444;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 24px 16px; }
+            .scenario { padding: 20px 16px; }
+            h1 { font-size: 1.6rem; }
+            .info-panel { grid-template-columns: 1fr; }
+            .service-node { width: 90px; padding: 8px 4px; }
+            .service-node .svc-icon { font-size: 1.1rem; }
+            .service-node .svc-name { font-size: 0.65rem; }
+            .waterfall-label { width: 70px; font-size: 0.65rem; }
+            .summary-table { font-size: 0.8rem; }
+            .summary-table th, .summary-table td { padding: 8px 6px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <a href="../" class="back">&larr; vs explain</a>
+        <h1>trace <span class="vs">vs</span> span</h1>
+        <p class="intro">A request moves through your system. Click "Send Request" and watch it flow.<br>The whole journey is a trace. Each stop along the way is a span.</p>
+
+        <div class="scenario">
+            <p>When a user makes an API call, it often passes through many services. Distributed tracing captures this journey. Tap the button to send a request, then tap individual spans in the waterfall to explore what each one recorded.</p>
+
+            <button class="trigger-btn" id="triggerBtn" onclick="sendRequest()">Send Request</button>
+
+            <div class="waterfall" id="waterfall" style="display:none;">
+                <div class="waterfall-header">
+                    <span>Service</span>
+                    <span>0ms &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100ms &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 200ms &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 300ms</span>
+                </div>
+                <div id="waterfallRows"></div>
+            </div>
+
+            <p class="instruction" id="tapInstruction" style="display:none;">Tap any bar to inspect that span</p>
+
+            <div class="info-panel" id="infoPanel" style="display:none;">
+                <div class="info-col trace-col">
+                    <h3>Trace</h3>
+                    <div class="info-value" id="traceInfo">The full request</div>
+                    <div class="info-detail" id="traceDetail"></div>
+                </div>
+                <div class="info-col span-col">
+                    <h3>Span</h3>
+                    <div class="info-value" id="spanInfo">—</div>
+                    <div class="info-detail" id="spanDetail">Tap a bar above to see span details</div>
+                </div>
+            </div>
+
+            <div class="controls" style="margin-top:20px;">
+                <button onclick="resetAll()">Reset</button>
+            </div>
+        </div>
+
+        <div class="scenario">
+            <div class="memory-trick">
+                A <strong style="color:#3498db">trace</strong> is the whole story of a request — from start to finish, across every service it touches.<br>
+                A <strong style="color:#e67e22">span</strong> is one chapter in that story — one service doing its part.<br><br>
+                Think of it like a book: the <strong style="color:#3498db">trace</strong> is the book, each <strong style="color:#e67e22">span</strong> is a chapter.<br>
+                Every chapter knows which book it belongs to (via the trace ID).
+            </div>
+        </div>
+
+        <div class="scenario">
+            <h2>Summary</h2>
+            <table class="summary-table">
+                <tr><th></th><th>Trace</th><th>Span</th></tr>
+                <tr><td>Scope</td><td>End-to-end request journey</td><td>A single operation within the trace</td></tr>
+                <tr><td>Made of</td><td>Multiple spans</td><td>Name, start time, duration, metadata</td></tr>
+                <tr><td>Identity</td><td>Trace ID (shared by all spans)</td><td>Span ID (unique per operation)</td></tr>
+                <tr><td>Relationship</td><td>Contains spans</td><td>Belongs to a trace, may have a parent span</td></tr>
+                <tr><td>Analogy</td><td>The whole journey on a map</td><td>One leg of the journey</td></tr>
+            </table>
+        </div>
+    </div>
+
+<script>
+const spans = [
+    { name: 'API Gateway', color: '#3498db', start: 0, duration: 300, depth: 0,
+      detail: 'The entry point. Receives the HTTP request, authenticates the user, and routes to the right service. It stays open until the response goes back.',
+      meta: 'http.method: GET, http.url: /api/orders/42, http.status: 200' },
+    { name: 'Auth Service', color: '#9b59b6', start: 10, duration: 40, depth: 1,
+      detail: 'Validates the JWT token. This span is a child of the Gateway span — it was called by the gateway.',
+      meta: 'auth.method: JWT, auth.result: valid, user.id: u_8821' },
+    { name: 'Order Service', color: '#e67e22', start: 55, duration: 200, depth: 1,
+      detail: 'The core business logic. Fetches the order, enriches it with product details. A parent span that calls the database and product service.',
+      meta: 'order.id: 42, order.status: completed' },
+    { name: 'Database', color: '#e74c3c', start: 65, duration: 30, depth: 2,
+      detail: 'A SQL query to fetch the order record. Child of the Order Service span. The fastest operation in this trace.',
+      meta: 'db.system: postgresql, db.statement: SELECT * FROM orders WHERE id=42' },
+    { name: 'Product Service', color: '#2ecc71', start: 105, duration: 120, depth: 2,
+      detail: 'An HTTP call to another microservice. This is where traces become powerful — they follow the request across service boundaries.',
+      meta: 'http.method: GET, http.url: /products/batch, items: 3' },
+    { name: 'Cache Lookup', color: '#1abc9c', start: 115, duration: 15, depth: 3,
+      detail: 'Checks Redis for cached product data. A child of the Product Service span. Cache miss this time.',
+      meta: 'cache.system: redis, cache.hit: false' },
+    { name: 'Product DB', color: '#f39c12', start: 140, duration: 70, depth: 3,
+      detail: 'Falls back to the database after cache miss. The slowest span — a good candidate for optimization.',
+      meta: 'db.system: mongodb, db.operation: find, db.collection: products' },
+    { name: 'Response', color: '#34495e', start: 270, duration: 28, depth: 1,
+      detail: 'Serializes the response to JSON and sends it back. The final span before the trace completes.',
+      meta: 'http.response.size: 2.4kb, content_type: application/json' },
+];
+
+const totalDuration = 310;
+let animating = false;
+let activeSpan = null;
+let revealed = 0;
+
+function sendRequest() {
+    if (animating) return;
+    animating = true;
+    document.getElementById('triggerBtn').disabled = true;
+    document.getElementById('waterfall').style.display = 'block';
+    document.getElementById('infoPanel').style.display = 'grid';
+
+    const traceId = 'trace-' + Math.random().toString(36).substr(2, 8);
+    document.getElementById('traceDetail').textContent = 'Trace ID: ' + traceId + '\nTotal spans: ' + spans.length + '\nTotal duration: ' + totalDuration + 'ms';
+
+    revealed = 0;
+    renderWaterfall();
+    revealNext();
+}
+
+function revealNext() {
+    if (revealed >= spans.length) {
+        animating = false;
+        document.getElementById('tapInstruction').style.display = 'block';
+        return;
+    }
+
+    revealed++;
+    renderWaterfall();
+
+    const span = spans[revealed - 1];
+    const delay = revealed < spans.length ? Math.max(150, (spans[revealed].start - span.start) * 1.5) : 300;
+    setTimeout(revealNext, delay);
+}
+
+function renderWaterfall() {
+    const container = document.getElementById('waterfallRows');
+    container.innerHTML = '';
+
+    for (let i = 0; i < revealed; i++) {
+        const s = spans[i];
+        const row = document.createElement('div');
+        row.className = 'waterfall-row' + (activeSpan === i ? ' active' : '') + (activeSpan !== null && activeSpan !== i ? ' dimmed' : '');
+
+        const leftPct = (s.start / totalDuration) * 100;
+        const widthPct = Math.max(2, (s.duration / totalDuration) * 100);
+        const indent = s.depth * 16;
+
+        row.innerHTML = `
+            <div class="waterfall-label" style="padding-left:${indent}px">${s.name}</div>
+            <div class="waterfall-track">
+                <div class="waterfall-bar" style="left:${leftPct}%; width:${widthPct}%; background:${s.color};">${s.duration}ms</div>
+            </div>
+        `;
+
+        row.addEventListener('click', () => selectSpan(i));
+        container.appendChild(row);
+    }
+}
+
+function selectSpan(i) {
+    if (animating) return;
+    activeSpan = activeSpan === i ? null : i;
+    renderWaterfall();
+
+    if (activeSpan !== null) {
+        const s = spans[activeSpan];
+        document.getElementById('spanInfo').textContent = s.name;
+        document.getElementById('spanDetail').innerHTML = s.detail + '<br><br><span style="font-size:0.75rem; color:#aaa; font-family:monospace;">' + s.meta.split(', ').join('<br>') + '</span>';
+    } else {
+        document.getElementById('spanInfo').textContent = '—';
+        document.getElementById('spanDetail').textContent = 'Tap a bar above to see span details';
+    }
+}
+
+function resetAll() {
+    animating = false;
+    activeSpan = null;
+    revealed = 0;
+    document.getElementById('triggerBtn').disabled = false;
+    document.getElementById('waterfall').style.display = 'none';
+    document.getElementById('infoPanel').style.display = 'none';
+    document.getElementById('tapInstruction').style.display = 'none';
+    document.getElementById('waterfallRows').innerHTML = '';
+    document.getElementById('spanInfo').textContent = '—';
+    document.getElementById('spanDetail').textContent = 'Tap a bar above to see span details';
+}
+</script>
+</body>
+</html>

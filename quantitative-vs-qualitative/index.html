@@ -6,21 +6,403 @@
     <title>quantitative vs qualitative — vs explain</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Georgia, 'Times New Roman', serif; background: #fafafa; color: #222; min-height: 100vh; padding: 40px 20px; }
-        .back { font-size: 0.9rem; color: #999; text-decoration: none; }
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            background: #fafafa;
+            color: #222;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .content { max-width: 720px; margin: 0 auto; }
+        .back { font-size: 0.9rem; color: #999; text-decoration: none; -webkit-tap-highlight-color: transparent; }
         .back:hover { color: #555; }
         h1 { font-size: 2.2rem; font-weight: 400; margin: 40px 0 10px; text-align: center; }
         h1 .vs { font-style: italic; color: #999; margin: 0 6px; }
-        .subtitle { text-align: center; color: #666; margin-bottom: 40px; }
-        .content { max-width: 640px; margin: 0 auto; }
-        p { margin-bottom: 1em; line-height: 1.6; }
+        .intro { text-align: center; color: #666; margin-bottom: 40px; line-height: 1.6; }
+
+        .scenario {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .scenario p {
+            line-height: 1.6;
+            margin-bottom: 16px;
+            color: #555;
+        }
+
+        /* The scene */
+        .street {
+            position: relative;
+            background: linear-gradient(180deg, #d4e4f7 0%, #e8e0d4 40%, #c8bfb0 100%);
+            border-radius: 8px;
+            height: 340px;
+            overflow: hidden;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            margin-bottom: 24px;
+        }
+        .street-label {
+            position: absolute;
+            top: 12px;
+            left: 0; right: 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: rgba(0,0,0,0.35);
+        }
+
+        /* People */
+        .person {
+            position: absolute;
+            bottom: 0;
+            transition: left 0.6s ease, opacity 0.3s;
+        }
+        .person-body {
+            width: 24px;
+            height: 40px;
+            border-radius: 12px 12px 4px 4px;
+            position: relative;
+        }
+        .person-head {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #f0d5b8;
+            position: absolute;
+            top: -14px;
+            left: 4px;
+        }
+
+        /* Two panels */
+        .dual-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+        .view-panel {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 180px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .view-panel.quant { border-color: #4A90D9; }
+        .view-panel.qual { border-color: #D97B4A; }
+        .view-panel h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .view-panel.quant h3 { color: #4A90D9; }
+        .view-panel.qual h3 { color: #D97B4A; }
+
+        /* Quant panel internals */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+        .stat-row .label { color: #888; }
+        .stat-row .value { font-weight: 600; color: #4A90D9; }
+
+        /* Qual panel internals */
+        .mood-text {
+            font-size: 1.3rem;
+            font-style: italic;
+            margin-bottom: 12px;
+            color: #333;
+            min-height: 36px;
+        }
+        .observation {
+            font-size: 0.9rem;
+            color: #888;
+            line-height: 1.6;
+            min-height: 60px;
+        }
+
+        /* Time slider */
+        .time-control {
+            margin: 24px 0 8px;
+            text-align: center;
+        }
+        .time-control label {
+            font-size: 0.85rem;
+            color: #888;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .time-slider {
+            width: 100%;
+            max-width: 400px;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #e8ddd0, #c8a882);
+            outline: none;
+            cursor: pointer;
+        }
+        .time-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #222;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+        .time-slider::-moz-range-thumb {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #222;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            cursor: pointer;
+        }
+        .time-display {
+            font-size: 0.95rem;
+            color: #555;
+            margin-top: 8px;
+        }
+
+        /* Takeaway */
+        .takeaway {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #555;
+            margin-top: 16px;
+        }
+        .takeaway strong { color: #222; }
+
+        .memory-trick {
+            background: #f8f6f3;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #555;
+            margin: 24px 0;
+        }
+        .memory-trick strong { color: #222; }
+
+        .summary-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .summary-section h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #444;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .summary-table th, .summary-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .summary-table th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+        }
+        .summary-table td:nth-child(2) { color: #4A90D9; }
+        .summary-table td:nth-child(3) { color: #D97B4A; }
+
+        @media (max-width: 600px) {
+            body { padding: 24px 16px; }
+            .scenario { padding: 20px 16px; }
+            .dual-view { grid-template-columns: 1fr; }
+            h1 { font-size: 1.6rem; }
+            .street { height: 260px; }
+        }
     </style>
 </head>
 <body>
     <div class="content">
         <a href="../" class="back">&larr; vs explain</a>
         <h1>quantitative <span class="vs">vs</span> qualitative</h1>
-        <p class="subtitle">Interactive explanation coming soon.</p>
+        <p class="intro">Two ways of understanding the same thing.<br>Drag the slider through a day at a coffee shop and watch both lenses respond.</p>
+
+        <div class="scenario">
+            <p>You're observing a coffee shop from across the street. As the day progresses, the same scene unfolds — but quantitative and qualitative descriptions tell very different stories about it.</p>
+
+            <div class="street" id="street">
+                <div class="street-label">coffee shop</div>
+            </div>
+
+            <div class="time-control">
+                <label>Drag through the day</label>
+                <input type="range" class="time-slider" id="timeSlider" min="0" max="100" value="0">
+                <div class="time-display" id="timeDisplay">6:00 AM — Opening</div>
+            </div>
+
+            <div class="dual-view">
+                <div class="view-panel quant" id="quantPanel">
+                    <h3>Quantitative</h3>
+                    <div class="stat-row"><span class="label">Customers</span><span class="value" id="qCustomers">0</span></div>
+                    <div class="stat-row"><span class="label">Cups sold</span><span class="value" id="qCups">0</span></div>
+                    <div class="stat-row"><span class="label">Revenue</span><span class="value" id="qRevenue">$0</span></div>
+                    <div class="stat-row"><span class="label">Avg wait</span><span class="value" id="qWait">0 min</span></div>
+                    <div class="stat-row"><span class="label">Capacity</span><span class="value" id="qCapacity">0%</span></div>
+                </div>
+                <div class="view-panel qual" id="qualPanel">
+                    <h3>Qualitative</h3>
+                    <div class="mood-text" id="qualMood"></div>
+                    <div class="observation" id="qualObs"></div>
+                </div>
+            </div>
+
+            <div class="takeaway">
+                <strong>Quantitative</strong> tells you <em>how much</em>. <strong>Qualitative</strong> tells you <em>what it's like</em>.<br>
+                The numbers say "42 cups, $189 revenue." The words say "a warm, buzzing afternoon."<br>
+                You need both to really understand.
+            </div>
+        </div>
+
+        <div class="memory-trick">
+            <strong style="color:#4A90D9">Quantitative</strong> has "quantity" in the name — it counts things.<br>
+            <strong style="color:#D97B4A">Qualitative</strong> has "quality" in the name — it describes things.<br><br>
+            If you can put it on a graph, it's quantitative. If you'd write it in a journal, it's qualitative.
+        </div>
+
+        <div class="summary-section">
+            <h2>Summary</h2>
+            <table class="summary-table">
+                <tr><th></th><th>Quantitative</th><th>Qualitative</th></tr>
+                <tr><td>Asks</td><td>How much? How many?</td><td>Why? What is it like?</td></tr>
+                <tr><td>Data type</td><td>Numbers, measurements</td><td>Words, descriptions, feelings</td></tr>
+                <tr><td>Strength</td><td>Precise, comparable</td><td>Rich, contextual</td></tr>
+                <tr><td>Weakness</td><td>Misses the "why"</td><td>Hard to compare at scale</td></tr>
+                <tr><td>Example</td><td>"Sales rose 14%"</td><td>"Customers feel welcomed"</td></tr>
+            </table>
+        </div>
     </div>
+
+<script>
+const street = document.getElementById('street');
+const slider = document.getElementById('timeSlider');
+
+const timeStops = [
+    { t: 0,   time: '6:00 AM', label: 'Opening', customers: 0, cups: 0, wait: 0, mood: '', obs: 'The shop is dark. A light flicks on inside. Someone unlocks the door.' },
+    { t: 8,   time: '6:30 AM', label: 'First customer', customers: 1, cups: 1, wait: 0, mood: '"Quiet start"', obs: 'One regular walks in without looking at the menu. The barista knows their order. Steam rises from the machine for the first time today.' },
+    { t: 18,  time: '7:15 AM', label: 'Early trickle', customers: 4, cups: 5, wait: 1, mood: '"Gentle rhythm"', obs: 'A few commuters stop in. Quick orders, quick exits. The barista hums. Morning light fills the window.' },
+    { t: 30,  time: '8:00 AM', label: 'Morning rush begins', customers: 12, cups: 16, wait: 3, mood: '"Picking up"', obs: 'A queue forms. Briefcases and backpacks. People check phones while waiting. The espresso machine hasn\'t stopped in ten minutes.' },
+    { t: 45,  time: '9:00 AM', label: 'Peak rush', customers: 28, cups: 38, wait: 7, mood: '"Buzzing"', obs: 'Standing room only. The barista moves fast, calling names. Two customers leave when they see the line. The smell of coffee fills the whole block.' },
+    { t: 55,  time: '10:30 AM', label: 'Mid-morning lull', customers: 34, cups: 45, wait: 2, mood: '"Breathing room"', obs: 'The rush clears. Laptops open. Someone reads a book by the window. The barista wipes down the counter and finally drinks their own coffee.' },
+    { t: 65,  time: '12:00 PM', label: 'Lunch crowd', customers: 42, cups: 52, wait: 4, mood: '"Warm and buzzing"', obs: 'A different crowd — lunch breakers, friends meeting. More laughter than the morning. Pastries are almost gone.' },
+    { t: 78,  time: '2:30 PM', label: 'Afternoon quiet', customers: 50, cups: 58, wait: 1, mood: '"Settled calm"', obs: 'Afternoon sun stretches across the tables. Two students study. A couple shares a pastry. The music is more noticeable now that it\'s quiet.' },
+    { t: 88,  time: '5:00 PM', label: 'After-work wave', customers: 60, cups: 68, wait: 3, mood: '"Second wind"', obs: 'People stop on the way home. More decaf, more conversations. The light turns golden. Someone asks if they\'re still open.' },
+    { t: 100, time: '7:00 PM', label: 'Closing', customers: 65, cups: 73, wait: 0, mood: '"Winding down"', obs: 'The last customer lingers. Chairs go up on tables one by one. The barista turns the sign. The street goes quiet.' },
+];
+
+const personColors = ['#5B8C5A','#4A90D9','#CD5A6A','#D4A843','#8C5BB0','#5ABCBC','#C97B3A','#7B7B7B','#A05A8C','#5A6A8C','#8C8C5A','#BC5A5A','#5A8C8C','#7A5A3A','#5A5ABE'];
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function getStopData(val) {
+    let prev = timeStops[0], next = timeStops[0];
+    for (let i = 0; i < timeStops.length - 1; i++) {
+        if (val >= timeStops[i].t && val <= timeStops[i + 1].t) {
+            prev = timeStops[i];
+            next = timeStops[i + 1];
+            break;
+        }
+    }
+    if (val >= timeStops[timeStops.length - 1].t) {
+        prev = next = timeStops[timeStops.length - 1];
+    }
+    const range = next.t - prev.t || 1;
+    const frac = (val - prev.t) / range;
+
+    return {
+        customers: Math.round(lerp(prev.customers, next.customers, frac)),
+        cups: Math.round(lerp(prev.cups, next.cups, frac)),
+        wait: Math.round(lerp(prev.wait, next.wait, frac)),
+        time: frac < 0.5 ? prev.time : next.time,
+        label: frac < 0.5 ? prev.label : next.label,
+        mood: frac < 0.5 ? prev.mood : next.mood,
+        obs: frac < 0.5 ? prev.obs : next.obs,
+    };
+}
+
+function renderPeople(count) {
+    // Remove old people
+    street.querySelectorAll('.person').forEach(el => el.remove());
+
+    const maxVisible = Math.min(count, 20);
+    const streetW = street.offsetWidth;
+    const spacing = streetW / (maxVisible + 1);
+
+    for (let i = 0; i < maxVisible; i++) {
+        const p = document.createElement('div');
+        p.className = 'person';
+        const x = spacing * (i + 1) - 12;
+        const col = personColors[i % personColors.length];
+        p.style.left = x + 'px';
+        p.style.bottom = (20 + Math.random() * 60) + 'px';
+        p.innerHTML = `<div class="person-head"></div><div class="person-body" style="background:${col}"></div>`;
+        street.appendChild(p);
+    }
+}
+
+function update() {
+    const val = parseInt(slider.value);
+    const data = getStopData(val);
+
+    document.getElementById('timeDisplay').textContent = data.time + ' — ' + data.label;
+    document.getElementById('qCustomers').textContent = data.customers;
+    document.getElementById('qCups').textContent = data.cups;
+    document.getElementById('qRevenue').textContent = '$' + (data.cups * 4.50).toFixed(0);
+    document.getElementById('qWait').textContent = data.wait + ' min';
+    document.getElementById('qCapacity').textContent = Math.min(100, Math.round((data.customers / 65) * 100)) + '%';
+
+    document.getElementById('qualMood').textContent = data.mood;
+    document.getElementById('qualObs').textContent = data.obs;
+
+    // People in scene
+    const visibleNow = Math.round(data.customers * 0.3);
+    renderPeople(visibleNow);
+
+    // Sky color shift
+    const hour = val / 100;
+    if (hour < 0.15) {
+        street.style.background = 'linear-gradient(180deg, #2a3a5c 0%, #4a4a3a 40%, #6a6050 100%)';
+    } else if (hour < 0.4) {
+        street.style.background = 'linear-gradient(180deg, #a8c4e0 0%, #e8e0d4 40%, #c8bfb0 100%)';
+    } else if (hour < 0.75) {
+        street.style.background = 'linear-gradient(180deg, #d4e4f7 0%, #e8e0d4 40%, #c8bfb0 100%)';
+    } else if (hour < 0.9) {
+        street.style.background = 'linear-gradient(180deg, #e8c87a 0%, #e0cdb4 40%, #c8b8a0 100%)';
+    } else {
+        street.style.background = 'linear-gradient(180deg, #3a3a5c 0%, #5a4a3a 40%, #6a6050 100%)';
+    }
+}
+
+slider.addEventListener('input', update);
+update();
+</script>
 </body>
 </html>
