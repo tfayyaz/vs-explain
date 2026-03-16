@@ -1,0 +1,13 @@
+resources:
+  pipelines:
+    table_a_to_b_pipeline:
+      name: table_a_to_b_pipeline
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      libraries:
+        - file:
+            path: ../src/table_a_to_b_pipeline/transformations
+      channel: PREVIEW
+      development: true
+      continuous: false
+      photon: false

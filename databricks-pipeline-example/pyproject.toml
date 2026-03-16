@@ -1,0 +1,9 @@
+[project]
+name = "table_a_to_b_pipeline"
+version = "0.1.0"
+description = "Example Databricks Declarative Pipeline: table_a to table_b"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools>=67.0"]
+build-backend = "setuptools.build_meta"

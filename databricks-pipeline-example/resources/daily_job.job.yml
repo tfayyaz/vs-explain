@@ -1,0 +1,12 @@
+resources:
+  jobs:
+    table_a_to_b_daily_job:
+      name: table_a_to_b_daily_job
+      schedule:
+        quartz_cron_expression: "0 0 9 * * ?"
+        timezone_id: UTC
+        pause_status: PAUSED
+      tasks:
+        - task_key: run_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.table_a_to_b_pipeline.id}

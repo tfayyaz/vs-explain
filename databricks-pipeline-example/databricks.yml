@@ -1,0 +1,20 @@
+bundle:
+  name: table_a_to_b_pipeline
+
+variables:
+  catalog:
+    default: main
+  schema:
+    default: default
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: ${workspace.host}
+
+  prod:
+    mode: production
+    workspace:
+      host: ${workspace.host}
